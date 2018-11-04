@@ -23,7 +23,7 @@ function isObject(val) {
  * @param {String} key
  * @param {*} val
  */
-function defineReactive(data, key, val){
+function (data, key, val){
     let deps = [];
     function isExist(target){
         return deps.some(function (item){
@@ -34,16 +34,15 @@ function defineReactive(data, key, val){
         enumerable: true,
         configurable: true,
         get: function(){
-            // console.log(`has get ${key}'s value`)
-            if(!isExist(target) && typeof target === 'function'){
+            if (typeof target === 'function' && !isExist(target)){
                 deps.push(target);
             } 
             return val;
         },
         set: function(newValue){
             if(newValue !== val){
-                debugger
                 val = newValue;
+                // notify更新依赖中的数据
                 for (var i = 0; i < deps.length; i++) {
                     deps[i]();
                 }
@@ -55,7 +54,7 @@ function defineReactive(data, key, val){
 
 /**
  *将数据对象的所有可枚举的属性遍历出来，
- *并调用defineReactive函数使这些属性
+ *并调用函数使这些属性
  *变为Setter和Getter形式，检查该值是否
  *是对象数据类型，如果是就继续递归转化这个
  *对象。
@@ -119,25 +118,22 @@ state.p = {
 }
 
 var xx = function () {
-    debugger
     return state.p.age + state.p.name
 }
 
 computed = {
-    result: xx,
-    val: 1
+    result: (function () {
+        var self = this
+        return function () {
+            debugger
+            self = xx()
+        }
+    }).apply(computed.result)
 }
-
-
 
 transformReactive(state);
 
 // makeResponsive(exp);
 // makeResponsive(exp_str)
-var com = (function (ref) {
-    return function () {
-        ref = xx()
-    }
-})(computed.val)
 
-makeResponsive(com);
+makeResponsive(computed.result);
